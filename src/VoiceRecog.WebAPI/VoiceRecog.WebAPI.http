@@ -1,0 +1,6 @@
+@VoiceRecog.WebAPI_HostAddress = http://localhost:5120
+
+GET {{VoiceRecog.WebAPI_HostAddress}}
+Accept: application/json
+
+###
