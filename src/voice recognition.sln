@@ -11,6 +11,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "VoiceRecog.WebAPI", "VoiceR
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VoicePi.StreamToApi", "VoicePi.StreamToApi\VoicePi.StreamToApi.csproj", "{14ADF361-1A48-41C7-9073-87F2DE52AF44}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DeepSpeech.Lib", "DeepSpeech.Lib\DeepSpeech.Lib.csproj", "{FA735729-41BB-4A0B-B87D-BEE5AF249C67}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -35,6 +37,10 @@ Global
 		{14ADF361-1A48-41C7-9073-87F2DE52AF44}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{14ADF361-1A48-41C7-9073-87F2DE52AF44}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{14ADF361-1A48-41C7-9073-87F2DE52AF44}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FA735729-41BB-4A0B-B87D-BEE5AF249C67}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FA735729-41BB-4A0B-B87D-BEE5AF249C67}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FA735729-41BB-4A0B-B87D-BEE5AF249C67}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FA735729-41BB-4A0B-B87D-BEE5AF249C67}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
