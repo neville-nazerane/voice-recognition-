@@ -1,33 +1,69 @@
-﻿namespace VoiceRecog.WebAPI
+﻿using System.Collections.Concurrent;
+
+namespace VoiceRecog.WebAPI
 {
     public class AudioService
     {
 
+        public static ConcurrentDictionary<string, long> fileSizes = new();
 
-        public async Task ReadAudioStreamAsync(Stream stream, CancellationToken cancellationToken)
+        public static ConcurrentDictionary<string, Stream> fileStreams = new();
+
+        public async Task ReadAudioStreamToFileAsync(Stream stream, string? fname = null, CancellationToken cancellationToken = default)
         {
             byte[] buffer = new byte[1024];
             int bytesRead;
             long totalAudioDataSize = 0; // To keep track of the total size of audio data written
 
-            string fileName = @$"downloadedAudioFiles\{Guid.NewGuid():N}.wav";
-            await using var fileStream = File.Create(fileName);
+            fname ??= Guid.NewGuid().ToString("N");
+            string fileName = @$"downloadedAudioFiles\{fname}.wav";
+
+            //if (!File.Exists(fileName))
+            //    await File.WriteAllTextAsync(fileName, string.Empty, cancellationToken);
+
+            var fileStream = fileStreams.GetOrAdd(fname, k => File.OpenWrite(fileName));
 
             await WriteWavHeaderAsync(fileStream, 44100, 16, 4);
 
-            while (!cancellationToken.IsCancellationRequested)
+            await Console.Out.WriteLineAsync($"{DateTime.Now.ToLongTimeString()}: Starting to read... ");
+
+            var ct = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            //ct.CancelAfter(TimeSpan.FromSeconds(10));
+
+            while (!ct.Token.IsCancellationRequested)
             {
                 bytesRead = await stream.ReadAsync(buffer, cancellationToken);
                 if (bytesRead > 0)
                 {
-                    await Console.Out.WriteLineAsync("READ " + bytesRead);
+                    //await Console.Out.WriteLineAsync("READ " + bytesRead);
                     await fileStream.WriteAsync(buffer.AsMemory(0, bytesRead), cancellationToken);
                     totalAudioDataSize += bytesRead;
                 }
+                else break;
             }
 
+            await Console.Out.WriteLineAsync($"{DateTime.Now.ToLongTimeString()}: Done reading");
+
             // Go back and update the header with the correct sizes
-            await UpdateWavHeaderAsync(fileStream, totalAudioDataSize);
+            //await UpdateWavHeaderAsync(fileStream, totalAudioDataSize);
+
+            fileSizes.AddOrUpdate(fname, totalAudioDataSize, (k, t) => t + totalAudioDataSize);
+
+            await Console.Out.WriteLineAsync($"{DateTime.Now.ToLongTimeString()}: Wrapped up");
+        }
+
+        public async Task CompleteFileAsync(string fileName, CancellationToken _ = default)
+        {
+
+            var stream = fileStreams[fileName];
+            await UpdateWavHeaderAsync(stream, fileSizes[fileName]);
+            await stream.DisposeAsync();
+            //long length = 0;
+            //await using (var read = File.OpenRead(fileName))
+            //    length = read.Length;
+
+            //await using var stream = File.OpenWrite(fileName);
+            //await UpdateWavHeaderAsync(stream, length, fileSizes[fileName]);
         }
 
         async Task WriteWavHeaderAsync(Stream stream, int sampleRate, int bitsPerSample, int channels)
@@ -50,7 +86,7 @@
             writer.Write(0); // Placeholder for data size
         }
 
-        async Task UpdateWavHeaderAsync(Stream fileStream, long totalAudioDataSize)
+        static async Task UpdateWavHeaderAsync(Stream fileStream, long totalAudioDataSize)
         {
             int fileLength = (int)fileStream.Length;
             int dataChunkSize = (int)totalAudioDataSize;
