@@ -397,3 +397,4 @@ FodyWeavers.xsd
 # JetBrains Rider
 *.sln.iml
 /src/VoiceRecog.WebAPI/DeepspeechModels
+/src/VoiceRecog.WebAPI/downloadedAudioFiles
