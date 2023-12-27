@@ -2,12 +2,32 @@
 
 namespace VoiceRecog.WebAPI
 {
-    public class AudioService
+    public class AudioService(DeepSpeechService deepSpeechService)
     {
 
-        public static ConcurrentDictionary<string, long> fileSizes = new();
+        public static readonly ConcurrentDictionary<string, long> _fileSizes = new();
 
-        public static ConcurrentDictionary<string, Stream> fileStreams = new();
+        public static readonly ConcurrentDictionary<string, Stream> _fileStreams = new();
+
+        public static readonly ConcurrentDictionary<string, MemoryStream> _audioStreams = new();
+
+        private readonly DeepSpeechService _deepSpeechService = deepSpeechService;
+
+        public async Task StreamAudioToText(Stream stream, string key, CancellationToken cancellationToken = default)
+        {
+            bool streamJustCreated = false;
+            var mainStream = _audioStreams.GetOrAdd(key, k =>
+            {
+                streamJustCreated = true;
+                return new();
+            });
+
+            await stream.CopyToAsync(mainStream, cancellationToken);
+            
+            if (streamJustCreated)
+                _ = _deepSpeechService.KeepReadingAsync(mainStream, CancellationToken.None);
+
+        }
 
         public async Task ReadAudioStreamToFileAsync(Stream stream, string? fname = null, CancellationToken cancellationToken = default)
         {
@@ -21,7 +41,7 @@ namespace VoiceRecog.WebAPI
             //if (!File.Exists(fileName))
             //    await File.WriteAllTextAsync(fileName, string.Empty, cancellationToken);
 
-            var fileStream = fileStreams.GetOrAdd(fname, k => File.OpenWrite(fileName));
+            var fileStream = _fileStreams.GetOrAdd(fname, k => File.OpenWrite(fileName));
 
             await WriteWavHeaderAsync(fileStream, 44100, 16, 4);
 
@@ -47,7 +67,7 @@ namespace VoiceRecog.WebAPI
             // Go back and update the header with the correct sizes
             //await UpdateWavHeaderAsync(fileStream, totalAudioDataSize);
 
-            fileSizes.AddOrUpdate(fname, totalAudioDataSize, (k, t) => t + totalAudioDataSize);
+            _fileSizes.AddOrUpdate(fname, totalAudioDataSize, (k, t) => t + totalAudioDataSize);
 
             await Console.Out.WriteLineAsync($"{DateTime.Now.ToLongTimeString()}: Wrapped up");
         }
@@ -55,8 +75,8 @@ namespace VoiceRecog.WebAPI
         public async Task CompleteFileAsync(string fileName, CancellationToken _ = default)
         {
 
-            var stream = fileStreams[fileName];
-            await UpdateWavHeaderAsync(stream, fileSizes[fileName]);
+            var stream = _fileStreams[fileName];
+            await UpdateWavHeaderAsync(stream, _fileSizes[fileName]);
             await stream.DisposeAsync();
             //long length = 0;
             //await using (var read = File.OpenRead(fileName))

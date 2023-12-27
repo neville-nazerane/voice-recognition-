@@ -4,7 +4,8 @@ var builder = WebApplication.CreateBuilder(args);
 
 var services = builder.Services;
 
-services.AddTransient<AudioService>();
+services.AddTransient<AudioService>()
+        .AddSingleton<DeepSpeechService>();
 
 var app = builder.Build();
 
@@ -13,6 +14,7 @@ app.MapGet("/", () => "Hello audio world!");
 app.MapPost("/audioToFile", StreamAudioToFileAsync);
 
 app.MapPost("/audioToSpecificFile/{fileName}", StreamAudioAFileAsync);
+app.MapPost("/audioToText/{key}", StreamToTextAsync);
 
 app.MapPost("/completeFile/{fileName}", CompleteFileAsync);
 
@@ -24,6 +26,15 @@ static async Task StreamAudioToFileAsync(HttpRequest req,
 {
     await using var stream = req.Body;
     await service.ReadAudioStreamToFileAsync(stream, cancellationToken: cancellationToken);
+}
+
+static async Task StreamToTextAsync(HttpRequest req,
+                                    AudioService service,
+                                    string key,
+                                    CancellationToken cancellationToken = default)
+{
+    await using var stream = req.Body;
+    await service.StreamAudioToText(stream, key, cancellationToken: cancellationToken);
 }
 
 static async Task StreamAudioAFileAsync(HttpRequest req,
