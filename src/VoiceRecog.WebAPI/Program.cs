@@ -18,6 +18,8 @@ app.MapPost("/audioToText/{key}", StreamToTextAsync);
 
 app.MapPost("/completeFile/{fileName}", CompleteFileAsync);
 
+app.MapGet("/showthis/{str}", Show);
+
 await app.RunAsync();
 
 static async Task StreamAudioToFileAsync(HttpRequest req,
@@ -50,3 +52,6 @@ static Task CompleteFileAsync(AudioService service,
                                     string fileName,
                                     CancellationToken cancellationToken = default)
     => service.CompleteFileAsync(fileName, cancellationToken);
+
+
+static void Show(string str) => Console.WriteLine(str);

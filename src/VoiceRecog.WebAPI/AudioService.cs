@@ -2,7 +2,7 @@
 
 namespace VoiceRecog.WebAPI
 {
-    public class AudioService(DeepSpeechService deepSpeechService)
+    public class AudioService()
     {
 
         public static readonly ConcurrentDictionary<string, long> _fileSizes = new();
@@ -11,7 +11,7 @@ namespace VoiceRecog.WebAPI
 
         public static readonly ConcurrentDictionary<string, MemoryStream> _audioStreams = new();
 
-        private readonly DeepSpeechService _deepSpeechService = deepSpeechService;
+        //private readonly DeepSpeechService _deepSpeechService = deepSpeechService;
 
         public async Task StreamAudioToText(Stream stream, string key, CancellationToken cancellationToken = default)
         {
@@ -23,9 +23,10 @@ namespace VoiceRecog.WebAPI
             });
 
             await stream.CopyToAsync(mainStream, cancellationToken);
-            
-            if (streamJustCreated)
-                _ = _deepSpeechService.KeepReadingAsync(mainStream, CancellationToken.None);
+
+            throw new NotImplementedException("No STT implimented");
+            //if (streamJustCreated)
+            //    _ = _deepSpeechService.KeepReadingAsync(mainStream, CancellationToken.None);
 
         }
 
@@ -62,7 +63,7 @@ namespace VoiceRecog.WebAPI
                 else break;
             }
 
-            await Console.Out.WriteLineAsync($"{DateTime.Now.ToLongTimeString()}: Done reading");
+            await Console.Out.WriteLineAsync($"{DateTime.Now.ToLongTimeString()}: Done reading {totalAudioDataSize} bytes");
 
             // Go back and update the header with the correct sizes
             //await UpdateWavHeaderAsync(fileStream, totalAudioDataSize);

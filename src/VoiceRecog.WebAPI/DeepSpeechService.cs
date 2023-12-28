@@ -42,9 +42,10 @@ namespace VoiceRecog.WebAPI
                 Buffer.BlockCopy(byteArray, 0, shortArray, 0, byteArray.Length);
 
                 // Call the SpeechToText function
+
                 var text = _deepSpeech.SpeechToText(shortArray, (uint)shortArray.Length);
 
-                await Console.Out.WriteLineAsync("DETECTED: " + text);
+                //await Console.Out.WriteLineAsync("DETECTED: " + text);
             }
 
         }
