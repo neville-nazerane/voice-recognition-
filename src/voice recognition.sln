@@ -17,6 +17,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ML.Samples", "ML.Samples\ML
 EndProject
 Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "WhisperAI.Passthrough", "WhisperAI.Passthrough\WhisperAI.Passthrough.pyproj", "{931D0AAD-B931-4861-8134-E17793FEFEC1}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WhisperAi.NetConsole", "WhisperAi.NetConsole\WhisperAi.NetConsole.csproj", "{313AA0B3-F83B-4202-8E01-ACBEEFD86005}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -51,6 +53,10 @@ Global
 		{9F1FBB9F-5E23-490B-8FCB-82E6C7D17776}.Release|Any CPU.Build.0 = Release|Any CPU
 		{931D0AAD-B931-4861-8134-E17793FEFEC1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{931D0AAD-B931-4861-8134-E17793FEFEC1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{313AA0B3-F83B-4202-8E01-ACBEEFD86005}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{313AA0B3-F83B-4202-8E01-ACBEEFD86005}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{313AA0B3-F83B-4202-8E01-ACBEEFD86005}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{313AA0B3-F83B-4202-8E01-ACBEEFD86005}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
