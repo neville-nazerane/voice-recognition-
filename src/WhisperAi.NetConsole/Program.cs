@@ -8,29 +8,30 @@ using Whisper.net.Ggml;
 
 var fileName = Path.Combine(@"D:\temp\recordings", $"{Guid.NewGuid():N}.wav");
 
-await RecordingAsync(fileName);
 
 
 
-var modelName = "ggml-base.bin";
+var modelName = "ggml-SmallEn.bin";
 
 if (!File.Exists(modelName))
 {
     Console.WriteLine("Downloading model...");
-    await using var modelStream = await WhisperGgmlDownloader.GetGgmlModelAsync(GgmlType.Base);
+    await using var modelStream = await WhisperGgmlDownloader.GetGgmlModelAsync(GgmlType.SmallEn);
     await using var fileWriter = File.OpenWrite(modelName);
     await modelStream.CopyToAsync(fileWriter);
     Console.WriteLine("Done downloading...");
 }
 
 
-using var whisperFactory = WhisperFactory.FromPath("ggml-base.bin");
+using var whisperFactory = WhisperFactory.FromPath(modelName);
 
 await using var processor = whisperFactory.CreateBuilder()
+                                    
                                             .WithLanguage("en")
                                             .Build();
 
 
+await RecordingAsync(fileName);
 var wavFileName = fileName;
 await using var stream = File.OpenRead(wavFileName);
 
