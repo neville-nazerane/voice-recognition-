@@ -32,21 +32,53 @@ await using var processor = whisperFactory.CreateBuilder()
 
 
 var wavFileName = fileName;
-await using var fileStream = File.OpenRead(wavFileName);
+await using var stream = File.OpenRead(wavFileName);
 
-await foreach (var result in processor.ProcessAsync(fileStream))
+//var stream = new MemoryStream();
+//await KeepRecordingAsync(stream);
+
+Console.WriteLine("Recog started...");
+var timeStamp = DateTime.UtcNow;
+await foreach (var result in processor.ProcessAsync(stream))
 {
     Console.WriteLine($"{result.Start}->{result.End}: {result.Text}");
 }
+Console.WriteLine($"Recog done in {(DateTime.UtcNow - timeStamp).TotalMilliseconds}ms");
 
 
 
 
+async Task KeepRecordingAsync(Stream stream)
+{
 
+    var taskSource = new TaskCompletionSource();
 
+    var waveIn = new WaveInEvent
+    {
+        WaveFormat = new WaveFormat(16000, 16, 1) // 16kHz sample rate, 16 bits per sample, 1 channel (mono)
+    };
 
+    var writer = stream;
 
+    waveIn.DataAvailable += (sender, args) =>
+    {
+        writer.WriteAsync(args.Buffer, 0, args.BytesRecorded);
+        if (writer.Position > waveIn.WaveFormat.AverageBytesPerSecond * 10)
+        {
+            waveIn.StopRecording();
+        }
+    };
 
+    waveIn.RecordingStopped += async (sender, args) =>
+    {
+        waveIn.Dispose();
+        taskSource.TrySetResult();
+    };
+
+    waveIn.StartRecording();
+    await taskSource.Task;
+    Console.WriteLine("Recording started...");
+}
 
 async Task RecordingAsync(string outputFilePath)
 {
@@ -62,8 +94,8 @@ async Task RecordingAsync(string outputFilePath)
 
     waveIn.DataAvailable += (sender, args) =>
     {
-        writer.Write(args.Buffer, 0, args.BytesRecorded);
-        if (writer.Position > waveIn.WaveFormat.AverageBytesPerSecond * 30) // Stop recording after 30 seconds
+        writer.WriteAsync(args.Buffer, 0, args.BytesRecorded);
+        if (writer.Position > waveIn.WaveFormat.AverageBytesPerSecond * 10)
         {
             waveIn.StopRecording();
         }
@@ -78,5 +110,4 @@ async Task RecordingAsync(string outputFilePath)
 
     waveIn.StartRecording();
     await taskSource.Task;
-    Console.WriteLine("Recording started. It will automatically stop after 30 seconds.");
 }
