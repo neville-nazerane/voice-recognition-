@@ -46,7 +46,7 @@ await foreach (var result in processor.ProcessAsync(stream))
 {
     Console.WriteLine($"{result.Start}->{result.End}: {result.Text}");
 }
-Console.WriteLine($"Processing done in {(DateTime.UtcNow - timeStamp).TotalMilliseconds}ms");
+Console.WriteLine($"Processing done in {(DateTime.UtcNow - timeStamp).TotalSeconds}s");
 
 
 
