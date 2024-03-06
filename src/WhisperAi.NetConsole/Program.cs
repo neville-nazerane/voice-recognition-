@@ -1,11 +1,14 @@
 ﻿using NAudio.Wave;
+using System.Collections.Concurrent;
 using Whisper.net;
 using Whisper.net.Ggml;
 
 
 
 
+CleanUp();
 
+SemaphoreSlim writeLock = new(1, 1);
 
 var modelName = "ggml-MediumEn.bin";
 
@@ -20,22 +23,70 @@ await using var processor = whisperFactory.CreateBuilder()
                                             .Build();
 
 
-Console.WriteLine("Listening...");
-await using var stream = await RecordToFileAsync(10);
-Console.WriteLine("Done listening");
+var results = new ConcurrentDictionary<string, string>();
 
-Console.WriteLine("Processing started...");
-var timeStamp = DateTime.UtcNow;
-await foreach (var result in processor.ProcessAsync(stream))
+var tasks = Enumerable.Range(0, 50)
+                      .Select(RunAsync);
+
+await Task.WhenAll(tasks);
+
+
+
+//await RunAsync(0);
+
+
+
+async Task RunAsync(int t)
 {
-    Console.WriteLine($"{result.Start}->{result.End}: {result.Text}");
+    await Task.Delay(TimeSpan.FromSeconds(t));
+    Console.WriteLine("Listening...");
+    await using var stream = await RecordToFileAsync(5);
+    Console.WriteLine("Done listening");
+
+    Console.WriteLine("Processing started...");
+    var timeStamp = DateTime.UtcNow;
+    
+    int counter = 0;
+
+    await foreach (var result in processor.ProcessAsync(stream))
+    {
+        results.TryAdd($"{t}:{++counter}", result.Text);
+        Console.WriteLine($"{t}: {result.Text}");
+    }
+
+    Console.WriteLine($"Processing done in {(DateTime.UtcNow - timeStamp).TotalSeconds}s");
+
 }
-Console.WriteLine($"Processing done in {(DateTime.UtcNow - timeStamp).TotalSeconds}s");
+
+Console.WriteLine("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n");
+
+var res = results.OrderBy(r => r.Key)
+                    .Select(r => r.Value)
+                    .ToArray();
+
+Console.WriteLine(string.Join("\n", res));
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 async Task<Stream> RecordToStreamAsync(int seconds)
 {
-    var writer = new MemoryStream();
+    var ms = new MemoryStream();
 
     var taskSource = new TaskCompletionSource<Stream>();
 
@@ -46,8 +97,8 @@ async Task<Stream> RecordToStreamAsync(int seconds)
 
     waveIn.DataAvailable += (sender, args) =>
     {
-        writer.WriteAsync(args.Buffer, 0, args.BytesRecorded);
-        if (writer.Position > waveIn.WaveFormat.AverageBytesPerSecond * seconds)
+        ms.WriteAsync(args.Buffer, 0, args.BytesRecorded);
+        if (ms.Position > waveIn.WaveFormat.AverageBytesPerSecond * seconds)
         {
             waveIn.StopRecording();
         }
@@ -56,12 +107,14 @@ async Task<Stream> RecordToStreamAsync(int seconds)
     waveIn.RecordingStopped += (sender, args) =>
     {
         waveIn.Dispose();
-        taskSource.TrySetResult(writer);
+        ms.Position = 0;
+        taskSource.TrySetResult(ms);
     };
 
     waveIn.StartRecording();
     return await taskSource.Task;
 }
+
 
 async Task<Stream> RecordToFileAsync(int seconds)
 {
@@ -78,9 +131,17 @@ async Task<Stream> RecordToFileAsync(int seconds)
 
     using var writer = new WaveFileWriter(fileName, waveIn.WaveFormat);
 
-    waveIn.DataAvailable += (sender, args) =>
+    waveIn.DataAvailable += async (sender, args) =>
     {
-        writer.WriteAsync(args.Buffer, 0, args.BytesRecorded);
+        await writeLock.WaitAsync();
+        try
+        {
+            await writer.WriteAsync(args.Buffer, 0, args.BytesRecorded);
+        }
+        finally
+        {
+            writeLock.Release();
+        }
         if (writer.Position > waveIn.WaveFormat.AverageBytesPerSecond * seconds)
         {
             waveIn.StopRecording();
@@ -98,6 +159,12 @@ async Task<Stream> RecordToFileAsync(int seconds)
 
     waveIn.StartRecording();
     return await taskSource.Task;
+}
+
+void CleanUp()
+{
+    foreach (var file in Directory.EnumerateFiles(@"D:\temp\recordings"))
+        File.Delete(file);
 }
 
 static async Task GetModelAsync(string modelName, GgmlType ggmlType)
